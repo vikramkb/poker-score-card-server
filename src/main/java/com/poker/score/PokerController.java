@@ -65,4 +65,29 @@ public class PokerController {
         return new ResponseEntity<>(fullTable, HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/players", method = RequestMethod.GET)
+    public ResponseEntity<List<Player>> getPlayers(){
+        List<Player> players = pokerService.getPlayers();
+        return new ResponseEntity<>(players, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/table/game/status", method = RequestMethod.POST)
+    public ResponseEntity<String> updateGameStatus(@RequestBody TableUpdateInfo tableUpdateInfo){
+        pokerService.updateGameStatus(tableUpdateInfo.getTableId(), tableUpdateInfo.getGameId(), tableUpdateInfo.isRunning());
+        return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/table/status", method = RequestMethod.POST)
+    public ResponseEntity<String> updateTableStatus(@RequestBody TableUpdateInfo tableUpdateInfo){
+        pokerService.updateTableStatus(tableUpdateInfo.getTableId(), tableUpdateInfo.isRunning());
+        return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/tables", method = RequestMethod.GET)
+    public ResponseEntity<List<Table>> getTables(){
+        List<Table> tables = pokerService.getTables();
+        return new ResponseEntity<>(tables, HttpStatus.OK);
+    }
+
+
 }

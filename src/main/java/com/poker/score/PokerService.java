@@ -309,4 +309,45 @@ public class PokerService {
         return tablePlayerTotalScore;
     }
 
+    public List<Player> getPlayers() {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+
+        List<Player> players = namedParameterJdbcTemplate.query(
+                "select * from player", parameters,
+                (rs, rowNum) -> {
+                    Player player = new Player();
+                    player.setFullName(rs.getString("full_name"));
+                    player.setPhone(rs.getString("phone"));
+                    player.setPlayerName(rs.getString("player_name"));
+                    return player;
+                });
+
+        return players;
+    }
+
+    public List<Table> getTables() {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        Map<Integer, String> playerIdNameMap = new HashMap<>();
+        List<Table> tables = namedParameterJdbcTemplate.query(
+                "select * from poker_table", parameters,
+                (rs, rowNum) -> {
+                    Table table = new Table();
+                    table.setTableId(rs.getInt("table_id"));
+                    table.setTableName(rs.getString("table_name"));
+                    table.setCreatedPlayerName(playerIdNameMap.get(rs.getString("created_player_id")));
+                    table.setTimestamp(rs.getTimestamp("currnt_timestamp"));
+                    table.setRunning(rs.getInt("is_running") == 1);
+                    return table;
+                });
+
+        return tables;
+    }
+
+    public void updateGameStatus(int tableId, int gameId, boolean isRunning) {
+        jdbcTemplate.update("update table_game set is_running = ? where table_id = ? and game_id = ?", isRunning ? 1 : 0, tableId, gameId);
+    }
+
+    public void updateTableStatus(int tableId, boolean isRunning) {
+        jdbcTemplate.update("update poker_table set is_running = ? where table_id = ?", isRunning ? 1 : 0, tableId);
+    }
 }
