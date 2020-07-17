@@ -5,6 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -79,13 +81,10 @@ public class PokerService {
     }
 
     public void createTableGame(TableGame tableGame) {
-        if(tableGame.getBidAmount() < 0) {
-            throw new IllegalArgumentException("bid amount can not be negative");
-        }
         if(tableGame.getGameSequence() <= 0) {
             throw new IllegalArgumentException("invalid game sequence");
         }
-        jdbcTemplate.update("insert into table_game(currnt_timestamp, table_id, game_sequence, bid_amount, is_running) values(CURRENT_TIMESTAMP, ?, ?, ?, ?)", tableGame.getTableId(), tableGame.getGameSequence(), tableGame.getBidAmount(), tableGame.isRunning() ? 1 : 0);
+        jdbcTemplate.update("insert into table_game(currnt_timestamp, table_id, game_sequence, is_running) values(CURRENT_TIMESTAMP, ?, ?, ?)", tableGame.getTableId(), tableGame.getGameSequence(), tableGame.isRunning() ? 1 : 0);
     }
 
     private List<Integer> getTablePlayers(int tableId) {
@@ -167,6 +166,18 @@ public class PokerService {
         return playerIdNameMap;
     }
 
+    private Map<String, Integer>  getPlayerNameIdMap() {
+        Map<String, Integer> playerNameIdMap = new HashMap<>();
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        namedParameterJdbcTemplate.query(
+                "select player_id, player_name from player", parameters,
+                (rs, rowNum) -> {
+                    playerNameIdMap.put(rs.getString("player_name"), rs.getInt("player_id"));
+                    return 1;
+                });
+
+        return playerNameIdMap;
+    }
 
     public FullTable getFullTable(int tableId) throws RESOURCE_NOT_FOUND_EXCEPTION {
         Map<Integer, String> playerIdNameMap = getPlayerIdNameMap();
@@ -229,7 +240,6 @@ public class PokerService {
                 "select * from table_game where table_id = :table_id", parameters,
                 (rs, rowNum) -> {
                     TableGame tableGame = new TableGame();
-                    tableGame.setBidAmount(rs.getInt("bid_amount"));
                     tableGame.setGameId(rs.getInt("game_id"));
                     tableGame.setGameSequence(rs.getInt("game_sequence"));
                     tableGame.setRunning(rs.getInt("is_running") == 1);
@@ -349,5 +359,25 @@ public class PokerService {
 
     public void updateTableStatus(int tableId, boolean isRunning) {
         jdbcTemplate.update("update poker_table set is_running = ? where table_id = ?", isRunning ? 1 : 0, tableId);
+    }
+
+    public void createTableGameRound(TableGameRoundPlayer tableGameRoundPlayer) {
+        if(tableGameRoundPlayer.getRoundSequence() < 0 || tableGameRoundPlayer.getBidAmount() < 0){
+            throw new IllegalArgumentException();
+        }
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("table_id", tableGameRoundPlayer.getTableId())
+                .addValue("game_id", tableGameRoundPlayer.getGameId())
+                .addValue("round_sequence", tableGameRoundPlayer.getRoundSequence())
+                .addValue("bid_amount", tableGameRoundPlayer.getBidAmount());
+        namedParameterJdbcTemplate.update("insert into table_game_round(currnt_timestamp, table_id, game_id, round_sequence, bid_amount) values(CURRENT_TIMESTAMP, :table_id, :game_id, :round_sequence, :bid_amount)", namedParameters, keyHolder);
+        Map<String, Integer> playerNameIdMap = getPlayerNameIdMap();
+        tableGameRoundPlayer.getPlayerNames().forEach(p -> {
+            jdbcTemplate.update("insert into table_game_round_player(currnt_timestamp, table_id, game_id, round_id, player_id) values(CURRENT_TIMESTAMP, ?, ?, ?, ?)", tableGameRoundPlayer.getTableId(), tableGameRoundPlayer.getGameId(), keyHolder.getKey(),  playerNameIdMap.get(p));
+
+                });
+
     }
 }

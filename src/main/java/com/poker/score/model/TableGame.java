@@ -8,7 +8,6 @@ public class TableGame {
     private int gameId;
     private int tableId;
     private int gameSequence;
-    private int bidAmount;
     private Timestamp timestamp;
     @JsonProperty
     private boolean isRunning;
@@ -27,14 +26,6 @@ public class TableGame {
 
     public void setTableId(int tableId) {
         this.tableId = tableId;
-    }
-
-    public int getBidAmount() {
-        return bidAmount;
-    }
-
-    public void setBidAmount(int bidAmount) {
-        this.bidAmount = bidAmount;
     }
 
     public boolean isRunning() {

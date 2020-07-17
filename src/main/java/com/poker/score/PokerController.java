@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -53,6 +54,12 @@ public class PokerController {
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
+    @RequestMapping(value = "/table/game/round", method = RequestMethod.POST)
+    public ResponseEntity<String> tableGameRoundPlayers(@RequestBody TableGameRoundPlayer tableGamePlayerScore){
+        pokerService.createTableGameRound(tableGamePlayerScore);
+        return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
+
     @RequestMapping(value = "/table/player/scores", method = RequestMethod.POST)
     public ResponseEntity<String> tableGameScore(@RequestBody TablePlayerTotalScore tablePlayerTotalScore){
         pokerService.createTableScores(tablePlayerTotalScore);
@@ -87,6 +94,21 @@ public class PokerController {
     public ResponseEntity<List<Table>> getTables(){
         List<Table> tables = pokerService.getTables();
         return new ResponseEntity<>(tables, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/full-tables", method = RequestMethod.GET)
+    public ResponseEntity<List<FullTable>> fullTable() throws RESOURCE_NOT_FOUND_EXCEPTION {
+        List<Table> tables = pokerService.getTables();
+        List<FullTable> fullTables = tables.stream().map(t -> {
+            try {
+                return pokerService.getFullTable(t.getTableId());
+            } catch (RESOURCE_NOT_FOUND_EXCEPTION resource_not_found_exception) {
+                resource_not_found_exception.printStackTrace();
+                return null;
+            }
+        }).collect(Collectors.toList());
+
+        return new ResponseEntity<>(fullTables, HttpStatus.OK);
     }
 
 
