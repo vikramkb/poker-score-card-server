@@ -4,6 +4,7 @@ import java.util.List;
 
 public class TableGamePlayerScore {
     private int gameSequence;
+    private int gameId;
     private int tableId;
     private List<String> playerNames;
     private List<Integer> scores;
@@ -38,5 +39,13 @@ public class TableGamePlayerScore {
 
     public void setScores(List<Integer> scores) {
         this.scores = scores;
+    }
+
+    public int getGameId() {
+        return gameId;
+    }
+
+    public void setGameId(int gameId) {
+        this.gameId = gameId;
     }
 }

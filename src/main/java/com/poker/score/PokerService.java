@@ -7,8 +7,7 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -153,4 +152,161 @@ public class PokerService {
     private boolean isBlank(String text) {
         return (text == null || text.trim().isEmpty());
     }
+
+    /*------------*/
+    private Map<Integer, String>  getPlayerIdNameMap() {
+        Map<Integer, String> playerIdNameMap = new HashMap<>();
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        namedParameterJdbcTemplate.query(
+                "select player_id, player_name from player", parameters,
+                (rs, rowNum) -> {
+                    playerIdNameMap.put(rs.getInt("player_id"), rs.getString("player_name"));
+                    return 1;
+                });
+
+        return playerIdNameMap;
+    }
+
+
+    public FullTable getFullTable(int tableId) throws RESOURCE_NOT_FOUND_EXCEPTION {
+        Map<Integer, String> playerIdNameMap = getPlayerIdNameMap();
+        Table table = getTable(tableId, playerIdNameMap);
+        TablePlayer tablePlayer = getTablePlayer(tableId, playerIdNameMap);
+        List<TableGame> tableGames = getTableGames(tableId);
+        List<TableGamePlayerScore> tableGamePlayerScores = getTableGamePlayerScore(tableId, playerIdNameMap);
+        TablePlayerTotalScore tablePlayerTotalScore = getTableScore(tableId, playerIdNameMap);
+
+        FullTable fullTable = new FullTable();
+        fullTable.setTable(table);
+        fullTable.setGames(tableGames);
+        fullTable.setGamesScore(tableGamePlayerScores);
+        fullTable.setTableTotalScore(tablePlayerTotalScore);
+        fullTable.setPlayers(tablePlayer);
+
+        return fullTable;
+    }
+
+    public Table getTable(int tableId, Map<Integer, String> playerIdNameMap) throws RESOURCE_NOT_FOUND_EXCEPTION {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+        List<Table> tables = namedParameterJdbcTemplate.query(
+                "select * from poker_table where table_id = :table_id", parameters,
+                (rs, rowNum) -> {
+                    Table table = new Table();
+                    table.setTableId(rs.getInt("table_id"));
+                    table.setRunning(rs.getInt("is_running") == 1);
+                    table.setTableName(rs.getString("table_name"));
+                    table.setCreatedPlayerName(playerIdNameMap.get(rs.getInt("created_player_id")));
+                    table.setTimestamp(rs.getTimestamp("currnt_timestamp"));
+                    return table;
+                });
+        if (tables.size() == 0) {
+            throw new RESOURCE_NOT_FOUND_EXCEPTION();
+        }
+        return tables.get(0);
+    }
+
+    public TablePlayer getTablePlayer(int tableId, Map<Integer, String> playerIdNameMap) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+        TablePlayer tablePlayer = new TablePlayer();
+        tablePlayer.setTableId(tableId);
+        List<String> playerNames = new ArrayList<>();
+        namedParameterJdbcTemplate.query(
+                "select * from table_player where table_id = :table_id", parameters,
+                (rs, rowNum) -> {
+                    playerNames.add(playerIdNameMap.get(rs.getInt("player_id")));
+                    return 1;
+                });
+        tablePlayer.setPlayers(playerNames);
+        return tablePlayer;
+    }
+
+    public List<TableGame> getTableGames(int tableId) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+        List<TableGame> tableGames = namedParameterJdbcTemplate.query(
+                "select * from table_game where table_id = :table_id", parameters,
+                (rs, rowNum) -> {
+                    TableGame tableGame = new TableGame();
+                    tableGame.setBidAmount(rs.getInt("bid_amount"));
+                    tableGame.setGameId(rs.getInt("game_id"));
+                    tableGame.setGameSequence(rs.getInt("game_sequence"));
+                    tableGame.setRunning(rs.getInt("is_running") == 1);
+                    tableGame.setTableId(rs.getInt("table_id"));
+                    tableGame.setTimestamp(rs.getTimestamp("currnt_timestamp"));
+                    return tableGame;
+                });
+        return tableGames;
+    }
+
+    private List<Pair<Integer, Integer>> getTableGameIds(int tableId) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+
+        List<Pair<Integer, Integer>> gameIds = namedParameterJdbcTemplate.query(
+                "select game_id, game_sequence from table_game where table_id = :table_id order by game_sequence", parameters,
+                (rs, rowNum) -> {
+                    Pair<Integer, Integer> gameidSeq = new Pair<>();
+                    gameidSeq.setFirst(rs.getInt("game_id"));
+                    gameidSeq.setSecond(rs.getInt("game_sequence"));
+                   return gameidSeq;
+                });
+
+        return gameIds;
+    }
+    private List<TableGamePlayerScore> getTableGamePlayerScore(int tableId, Map<Integer, String> playerIdNameMap) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+        List<TableGamePlayerScore> tableGamePlayerScores = new ArrayList<>();
+        getTableGameIds(tableId).stream().forEach(g -> {
+            TableGamePlayerScore tableGamePlayerScore = new TableGamePlayerScore();
+            tableGamePlayerScore.setGameSequence(g.getSecond());
+            tableGamePlayerScore.setGameId(g.getFirst());
+            tableGamePlayerScore.setTableId(tableId);
+            List<String> playerNames = new ArrayList<>();
+            List<Integer> scores = new ArrayList<>();
+
+            MapSqlParameterSource parameters1 = new MapSqlParameterSource();
+            parameters1.addValue("table_id", tableId);
+            parameters1.addValue("game_id", g.getFirst());
+
+            namedParameterJdbcTemplate.query(
+                    "select * from table_game_player_score where table_id = :table_id and game_id = :game_id", parameters1,
+                    (rs, rowNum) -> {
+                        playerNames.add(playerIdNameMap.get(rs.getInt("player_id")));
+                        scores.add(rs.getInt("score"));
+                        return 1;
+                    });
+            tableGamePlayerScore.setPlayerNames(playerNames);
+            tableGamePlayerScore.setScores(scores);
+            tableGamePlayerScores.add(tableGamePlayerScore);
+        });
+
+        return tableGamePlayerScores;
+    }
+    private TablePlayerTotalScore getTableScore(int tableId, Map<Integer, String> playerIdNameMap) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+            TablePlayerTotalScore tablePlayerTotalScore = new TablePlayerTotalScore();
+            tablePlayerTotalScore.setTableId(tableId);
+            List<String> playerNames = new ArrayList<>();
+            List<Integer> scores = new ArrayList<>();
+
+            MapSqlParameterSource parameters1 = new MapSqlParameterSource();
+            parameters1.addValue("table_id", tableId);
+
+            namedParameterJdbcTemplate.query(
+                    "select * from table_player_score where table_id = :table_id", parameters,
+                    (rs, rowNum) -> {
+                        playerNames.add(playerIdNameMap.get(rs.getInt("player_id")));
+                        scores.add(rs.getInt("score"));
+                        return 1;
+                    });
+        tablePlayerTotalScore.setPlayerNames(playerNames);
+        tablePlayerTotalScore.setScores(scores);
+
+        return tablePlayerTotalScore;
+    }
+
 }

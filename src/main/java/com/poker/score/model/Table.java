@@ -2,10 +2,13 @@ package com.poker.score.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.sql.Timestamp;
+
 public class Table {
     private int tableId;
     private String tableName;
     private String createdPlayerName;
+    private Timestamp timestamp;
     @JsonProperty
     private boolean isRunning;
 
@@ -39,5 +42,13 @@ public class Table {
 
     public void setRunning(boolean running) {
         isRunning = running;
+    }
+
+    public Timestamp getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Timestamp timestamp) {
+        this.timestamp = timestamp;
     }
 }
