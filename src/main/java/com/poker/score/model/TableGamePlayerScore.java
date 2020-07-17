@@ -3,17 +3,17 @@ package com.poker.score.model;
 import java.util.List;
 
 public class TableGamePlayerScore {
-    private int gameId;
+    private int gameSequence;
     private int tableId;
     private List<String> playerNames;
     private List<Integer> scores;
 
-    public int getGameId() {
-        return gameId;
+    public int getGameSequence() {
+        return gameSequence;
     }
 
-    public void setGameId(int gameId) {
-        this.gameId = gameId;
+    public void setGameSequence(int gameSequence) {
+        this.gameSequence = gameSequence;
     }
 
     public int getTableId() {

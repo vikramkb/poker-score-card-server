@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.util.List;
+
 @Controller
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 public class PokerController {
@@ -37,6 +39,14 @@ public class PokerController {
     @RequestMapping(value = "/player", method = RequestMethod.POST)
     public ResponseEntity<String> createPlayer(@RequestBody Player player){
         pokerService.createPlayer(player);
+        return new ResponseEntity<>("ok", HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/players", method = RequestMethod.POST)
+    public ResponseEntity<String> createPlayers(@RequestBody List<Player> players){
+        players.forEach(p -> {
+            pokerService.createPlayer(p);
+        });
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
