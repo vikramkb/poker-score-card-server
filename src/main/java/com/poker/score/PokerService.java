@@ -21,12 +21,19 @@ public class PokerService {
     @Autowired
     NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    void createTable(Table table) {
+    public int createTable(Table table) {
         if(table.getTableId() < 0) {
             throw new IllegalArgumentException("invalid table id");
         }
         int playerId = getPlayerId(table.getCreatedPlayerName());
-        jdbcTemplate.update("insert into poker_table(currnt_timestamp, table_name, created_player_id, is_running) values(CURRENT_TIMESTAMP, ?, ?, ?)", table.getTableName(), playerId, table.isRunning() ? 1 : 0);
+        MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("table_name", table.getTableName())
+                .addValue("created_player_id", playerId)
+                .addValue("is_running", table.isRunning() ? 1 : 0);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        namedParameterJdbcTemplate.update("insert into poker_table(currnt_timestamp, table_name, created_player_id, is_running) values(CURRENT_TIMESTAMP, :table_name, :created_player_id, :is_running)", namedParameters, keyHolder);
+        return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 
     private int getPlayerId(String playerName) {
@@ -80,11 +87,18 @@ public class PokerService {
         });
     }
 
-    public void createTableGame(TableGame tableGame) {
+    public int createTableGame(TableGame tableGame) {
         if(tableGame.getGameSequence() <= 0) {
             throw new IllegalArgumentException("invalid game sequence");
         }
-        jdbcTemplate.update("insert into table_game(currnt_timestamp, table_id, game_sequence, is_running) values(CURRENT_TIMESTAMP, ?, ?, ?)", tableGame.getTableId(), tableGame.getGameSequence(), tableGame.isRunning() ? 1 : 0);
+        MapSqlParameterSource namedParameters = new MapSqlParameterSource()
+                .addValue("table_id", tableGame.getTableId())
+                .addValue("game_sequence", tableGame.getGameSequence())
+                .addValue("is_running", tableGame.isRunning() ? 1 : 0);
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        namedParameterJdbcTemplate.update("insert into table_game(currnt_timestamp, table_id, game_sequence, is_running) values(CURRENT_TIMESTAMP, :table_id, :game_sequence, :is_running)", namedParameters, keyHolder);
+        return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 
     private List<Integer> getTablePlayers(int tableId) {
@@ -361,7 +375,7 @@ public class PokerService {
         jdbcTemplate.update("update poker_table set is_running = ? where table_id = ?", isRunning ? 1 : 0, tableId);
     }
 
-    public void createTableGameRound(TableGameRoundPlayer tableGameRoundPlayer) {
+    public int createTableGameRound(TableGameRoundPlayer tableGameRoundPlayer) {
         if(tableGameRoundPlayer.getRoundSequence() < 0 || tableGameRoundPlayer.getBidAmount() < 0){
             throw new IllegalArgumentException();
         }
@@ -378,6 +392,6 @@ public class PokerService {
             jdbcTemplate.update("insert into table_game_round_player(currnt_timestamp, table_id, game_id, round_id, player_id) values(CURRENT_TIMESTAMP, ?, ?, ?, ?)", tableGameRoundPlayer.getTableId(), tableGameRoundPlayer.getGameId(), keyHolder.getKey(),  playerNameIdMap.get(p));
 
                 });
-
+        return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 }

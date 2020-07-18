@@ -17,9 +17,9 @@ public class PokerController {
     private PokerService pokerService;
 
     @RequestMapping(value = "/table", method = RequestMethod.POST)
-    public ResponseEntity<String> createTableGame(@RequestBody Table table){
-        pokerService.createTable(table);
-        return new ResponseEntity<>("ok", HttpStatus.OK);
+    public ResponseEntity<Integer> createTableGame(@RequestBody Table table){
+        int tableId = pokerService.createTable(table);
+        return new ResponseEntity<>(tableId, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/table/player", method = RequestMethod.POST)
@@ -29,9 +29,9 @@ public class PokerController {
     }
 
     @RequestMapping(value = "/table/game", method = RequestMethod.POST)
-    public ResponseEntity<String> createTableGame(@RequestBody TableGame tableGame){
-        pokerService.createTableGame(tableGame);
-        return new ResponseEntity<>("ok", HttpStatus.OK);
+    public ResponseEntity<Integer> createTableGame(@RequestBody TableGame tableGame){
+        int gameId = pokerService.createTableGame(tableGame);
+        return new ResponseEntity<>(gameId, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/player", method = RequestMethod.POST)
@@ -55,9 +55,9 @@ public class PokerController {
     }
 
     @RequestMapping(value = "/table/game/round", method = RequestMethod.POST)
-    public ResponseEntity<String> tableGameRoundPlayers(@RequestBody TableGameRoundPlayer tableGamePlayerScore){
-        pokerService.createTableGameRound(tableGamePlayerScore);
-        return new ResponseEntity<>("ok", HttpStatus.OK);
+    public ResponseEntity<Integer> tableGameRoundPlayers(@RequestBody TableGameRoundPlayer tableGamePlayerScore){
+        int roundId = pokerService.createTableGameRound(tableGamePlayerScore);
+        return new ResponseEntity<>(roundId, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/table/player/scores", method = RequestMethod.POST)
