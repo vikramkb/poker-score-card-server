@@ -125,7 +125,8 @@ public class PokerService {
         List<Integer> tablePlayers = getTablePlayers(tableGamePlayerScore.getTableId());
         isEveryonePlayingOnTable(tablePlayers, getPlayerIds(tableGamePlayerScore.getPlayerNames()));
 
-        int gameId = getGameId(tableGamePlayerScore.getTableId(), tableGamePlayerScore.getGameSequence());
+//        int gameId = getGameId(tableGamePlayerScore.getTableId(), tableGamePlayerScore.getGameSequence());
+        int gameId = tableGamePlayerScore.getGameId();
         jdbcTemplate.update("delete from table_game_player_score where table_id=? and game_id=?", tableGamePlayerScore.getTableId(), gameId);
 
         IntStream.range(0, tableGamePlayerScore.getPlayerNames().size()).forEach(idx -> {
@@ -152,12 +153,12 @@ public class PokerService {
         List<Integer> tablePlayers = getTablePlayers(tablePlayerTotalScore.getTableId());
         isEveryonePlayingOnTable(tablePlayers, getPlayerIds(tablePlayerTotalScore.getPlayerNames()));
 
-        jdbcTemplate.update("delete from table_player_score where table_id=?", tablePlayerTotalScore.getTableId());
+        jdbcTemplate.update("delete from table_total_player_score where table_id=?", tablePlayerTotalScore.getTableId());
 
         IntStream.range(0, tablePlayerTotalScore.getPlayerNames().size()).forEach(idx -> {
             int playerId = getPlayerId(tablePlayerTotalScore.getPlayerNames().get(idx));
             int score = tablePlayerTotalScore.getScores().get(idx);
-            jdbcTemplate.update("insert into table_player_score(currnt_timestamp, table_id, player_id, score) values(CURRENT_TIMESTAMP, ?, ?, ?)", tablePlayerTotalScore.getTableId(), playerId, score);
+            jdbcTemplate.update("insert into table_total_player_score(currnt_timestamp, table_id, player_id, score) values(CURRENT_TIMESTAMP, ?, ?, ?)", tablePlayerTotalScore.getTableId(), playerId, score);
         });
 
     }
@@ -321,7 +322,7 @@ public class PokerService {
             parameters1.addValue("table_id", tableId);
 
             namedParameterJdbcTemplate.query(
-                    "select * from table_player_score where table_id = :table_id", parameters,
+                    "select * from table_total_player_score where table_id = :table_id", parameters,
                     (rs, rowNum) -> {
                         playerNames.add(playerIdNameMap.get(rs.getInt("player_id")));
                         scores.add(rs.getInt("score"));
