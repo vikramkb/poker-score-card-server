@@ -9,6 +9,7 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
+import javax.swing.text.html.Option;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -270,6 +271,18 @@ public class PokerService {
         return tablePlayer;
     }
 
+    public Optional<Integer> getRoundId(int tableId, int gameId, int roundSequence) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+        parameters.addValue("game_id", gameId);
+        parameters.addValue("round_sequence", roundSequence);
+        List<Integer> roundId = namedParameterJdbcTemplate.query(
+                "select round_id from table_game_round where table_id = :table_id and game_id = :game_id and round_sequence = :round_sequence", parameters,
+                (rs, rowNum) -> rs.getInt("round_id"));
+
+        return roundId.size() > 0 ? Optional.of(roundId.get(0)) : Optional.empty();
+    }
+
     public List<TableGame> getTableGames(int tableId, Map<Integer, String> playerIdNameMap) {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("table_id", tableId);
@@ -410,6 +423,12 @@ public class PokerService {
             throw new IllegalArgumentException();
         }
 
+        Optional<Integer> roundId = getRoundId(tableGameRoundPlayer.getTableId(), tableGameRoundPlayer.getGameId(), tableGameRoundPlayer.getRoundSequence());
+        roundId.map(r -> {
+            jdbcTemplate.update("delete from table_game_round_player where table_id=? and game_id=? and round_id=?",tableGameRoundPlayer.getTableId(),tableGameRoundPlayer.getGameId(),r);
+            jdbcTemplate.update("delete from table_game_round where table_id=? and game_id=? and round_id=?",tableGameRoundPlayer.getTableId(),tableGameRoundPlayer.getGameId(),r);
+            return r;
+        });
         KeyHolder keyHolder = new GeneratedKeyHolder();
         MapSqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("table_id", tableGameRoundPlayer.getTableId())
