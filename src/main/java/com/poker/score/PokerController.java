@@ -91,17 +91,17 @@ public class PokerController {
     }
 
     @RequestMapping(value = "/tables", method = RequestMethod.GET)
-    public ResponseEntity<List<Table>> getTables(){
-        List<Table> tables = pokerService.getTables();
+    public ResponseEntity<List<TableScore>> getTables(){
+        List<TableScore> tables = pokerService.getTables();
         return new ResponseEntity<>(tables, HttpStatus.OK);
     }
 
     @RequestMapping(value = "/full-tables", method = RequestMethod.GET)
     public ResponseEntity<List<FullTable>> fullTable() throws RESOURCE_NOT_FOUND_EXCEPTION {
-        List<Table> tables = pokerService.getTables();
+        List<TableScore> tables = pokerService.getTables();
         List<FullTable> fullTables = tables.stream().map(t -> {
             try {
-                return pokerService.getFullTable(t.getTableId());
+                return pokerService.getFullTable(t.getTable().getTableId());
             } catch (RESOURCE_NOT_FOUND_EXCEPTION resource_not_found_exception) {
                 resource_not_found_exception.printStackTrace();
                 return null;

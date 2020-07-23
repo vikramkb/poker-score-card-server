@@ -8,6 +8,8 @@ public class FullTable {
     private List<TableGame> games;
     private List<TableGamePlayerScore> gamesScore;
     private TablePlayerTotalScore tableTotalScore;
+    private List<TableGameRoundPlayer> tableGameRoundPlayers;
+
 
     public Table getTable() {
         return table;
@@ -47,5 +49,13 @@ public class FullTable {
 
     public void setTableTotalScore(TablePlayerTotalScore tableTotalScore) {
         this.tableTotalScore = tableTotalScore;
+    }
+
+    public List<TableGameRoundPlayer> getTableGameRoundPlayers() {
+        return tableGameRoundPlayers;
+    }
+
+    public void setTableGameRoundPlayers(List<TableGameRoundPlayer> tableGameRoundPlayers) {
+        this.tableGameRoundPlayers = tableGameRoundPlayers;
     }
 }

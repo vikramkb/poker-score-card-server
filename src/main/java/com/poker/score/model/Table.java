@@ -9,6 +9,8 @@ public class Table {
     private String tableName;
     private String createdPlayerName;
     private Timestamp timestamp;
+    private boolean isRealGame;
+
     @JsonProperty
     private boolean isRunning;
 
@@ -50,5 +52,13 @@ public class Table {
 
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public boolean isRealGame() {
+        return isRealGame;
+    }
+
+    public void setRealGame(boolean realGame) {
+        isRealGame = realGame;
     }
 }

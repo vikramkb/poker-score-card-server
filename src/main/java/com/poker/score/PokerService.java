@@ -201,6 +201,7 @@ public class PokerService {
         List<TableGame> tableGames = getTableGames(tableId);
         List<TableGamePlayerScore> tableGamePlayerScores = getTableGamePlayerScore(tableId, playerIdNameMap);
         TablePlayerTotalScore tablePlayerTotalScore = getTableScore(tableId, playerIdNameMap);
+        List<TableGameRoundPlayer> tableGameRoundPlayers = getTableGameRoundPlayers(tableId);
 
         FullTable fullTable = new FullTable();
         fullTable.setTable(table);
@@ -208,8 +209,26 @@ public class PokerService {
         fullTable.setGamesScore(tableGamePlayerScores);
         fullTable.setTableTotalScore(tablePlayerTotalScore);
         fullTable.setPlayers(tablePlayer);
+        fullTable.setTableGameRoundPlayers(tableGameRoundPlayers);
 
         return fullTable;
+    }
+
+    private List<TableGameRoundPlayer> getTableGameRoundPlayers(int tableId) {
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("table_id", tableId);
+        List<TableGameRoundPlayer> tableGameRoundPlayers = namedParameterJdbcTemplate.query(
+                "SELECT tgrp.table_id, tgrp.game_id, tgrp.round_id, tgr.bid_amount, GROUP_CONCAT(p.player_name) round_players FROM table_game_round tgr, table_game_round_player tgrp, player p where tgr.round_ID=tgrp.round_id and tgrp.player_id=p.player_id and tgr.table_id = :table_id group by table_id, game_id, round_id, bid_amount order by table_id, game_id, round_id;", parameters,
+                (rs, rowNum) -> {
+                    TableGameRoundPlayer round = new TableGameRoundPlayer();
+                    round.setTableId(rs.getInt("table_id"));
+                    round.setGameId(rs.getInt("game_id"));
+                    round.setRoundId(rs.getInt("round_id"));
+                    round.setBidAmount(rs.getInt("bid_amount"));
+                    round.setPlayerNames(Arrays.asList(rs.getString("round_players").split(",")));
+                    return round;
+                });
+        return tableGameRoundPlayers;
     }
 
     public Table getTable(int tableId, Map<Integer, String> playerIdNameMap) throws RESOURCE_NOT_FOUND_EXCEPTION {
@@ -350,19 +369,24 @@ public class PokerService {
         return players;
     }
 
-    public List<Table> getTables() {
+    public List<TableScore> getTables() {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
-        Map<Integer, String> playerIdNameMap = new HashMap<>();
-        List<Table> tables = namedParameterJdbcTemplate.query(
-                "select * from poker_table", parameters,
+        Map<Integer, String> playerIdNameMap = getPlayerIdNameMap();
+        List<TableScore> tables = namedParameterJdbcTemplate.query(
+                "select * from poker_table order by currnt_timestamp desc", parameters,
                 (rs, rowNum) -> {
                     Table table = new Table();
                     table.setTableId(rs.getInt("table_id"));
+                    table.setRealGame(rs.getInt("is_real_game") == 1);
                     table.setTableName(rs.getString("table_name"));
                     table.setCreatedPlayerName(playerIdNameMap.get(rs.getString("created_player_id")));
                     table.setTimestamp(rs.getTimestamp("currnt_timestamp"));
                     table.setRunning(rs.getInt("is_running") == 1);
-                    return table;
+                    TablePlayerTotalScore tablePlayerTotalScore = getTableScore(rs.getInt("table_id"), playerIdNameMap);
+                    TableScore tableScore = new TableScore();
+                    tableScore.setTable(table);
+                    tableScore.setTablePlayerTotalScore(tablePlayerTotalScore);
+                    return tableScore;
                 });
 
         return tables;

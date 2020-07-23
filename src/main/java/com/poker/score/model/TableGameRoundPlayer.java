@@ -6,6 +6,7 @@ import java.util.List;
 public class TableGameRoundPlayer {
     private int gameId;
     private int tableId;
+    private int roundId;
     private int bidAmount;
     private int roundSequence;
     private List<String> playerNames;
@@ -57,5 +58,13 @@ public class TableGameRoundPlayer {
 
     public void setRoundSequence(int roundSequence) {
         this.roundSequence = roundSequence;
+    }
+
+    public int getRoundId() {
+        return roundId;
+    }
+
+    public void setRoundId(int roundId) {
+        this.roundId = roundId;
     }
 }
