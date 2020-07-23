@@ -7,6 +7,7 @@ public class TableUpdateInfo {
     private int gameId;
     @JsonProperty
     private boolean isRunning;
+    private String winnerName;
 
     public int getTableId() {
         return tableId;
@@ -30,5 +31,13 @@ public class TableUpdateInfo {
 
     public void setRunning(boolean running) {
         isRunning = running;
+    }
+
+    public String getWinnerName() {
+        return winnerName;
+    }
+
+    public void setWinnerName(String winnerName) {
+        this.winnerName = winnerName;
     }
 }

@@ -8,6 +8,7 @@ public class TableGame {
     private int gameId;
     private int tableId;
     private int gameSequence;
+    private String winnerName;
     private Timestamp timestamp;
     @JsonProperty
     private boolean isRunning;
@@ -50,5 +51,13 @@ public class TableGame {
 
     public void setTimestamp(Timestamp timestamp) {
         this.timestamp = timestamp;
+    }
+
+    public String getWinnerName() {
+        return winnerName;
+    }
+
+    public void setWinnerName(String winnerName) {
+        this.winnerName = winnerName;
     }
 }

@@ -91,13 +91,16 @@ public class PokerService {
         if(tableGame.getGameSequence() <= 0) {
             throw new IllegalArgumentException("invalid game sequence");
         }
+        Integer winnerPlayerId = tableGame.getWinnerName() != null && !tableGame.getWinnerName().isEmpty() ? getPlayerId(tableGame.getWinnerName()) : null;
+
         MapSqlParameterSource namedParameters = new MapSqlParameterSource()
                 .addValue("table_id", tableGame.getTableId())
                 .addValue("game_sequence", tableGame.getGameSequence())
+                .addValue("winner_player_id", winnerPlayerId)
                 .addValue("is_running", tableGame.isRunning() ? 1 : 0);
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        namedParameterJdbcTemplate.update("insert into table_game(currnt_timestamp, table_id, game_sequence, is_running) values(CURRENT_TIMESTAMP, :table_id, :game_sequence, :is_running)", namedParameters, keyHolder);
+        namedParameterJdbcTemplate.update("insert into table_game(currnt_timestamp, table_id, game_sequence, is_running, winner_player_id) values(CURRENT_TIMESTAMP, :table_id, :game_sequence, :is_running, :winner_player_id)", namedParameters, keyHolder);
         return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 
@@ -198,7 +201,7 @@ public class PokerService {
         Map<Integer, String> playerIdNameMap = getPlayerIdNameMap();
         Table table = getTable(tableId, playerIdNameMap);
         TablePlayer tablePlayer = getTablePlayer(tableId, playerIdNameMap);
-        List<TableGame> tableGames = getTableGames(tableId);
+        List<TableGame> tableGames = getTableGames(tableId, playerIdNameMap);
         List<TableGamePlayerScore> tableGamePlayerScores = getTableGamePlayerScore(tableId, playerIdNameMap);
         TablePlayerTotalScore tablePlayerTotalScore = getTableScore(tableId, playerIdNameMap);
         List<TableGameRoundPlayer> tableGameRoundPlayers = getTableGameRoundPlayers(tableId);
@@ -267,7 +270,7 @@ public class PokerService {
         return tablePlayer;
     }
 
-    public List<TableGame> getTableGames(int tableId) {
+    public List<TableGame> getTableGames(int tableId, Map<Integer, String> playerIdNameMap) {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("table_id", tableId);
         List<TableGame> tableGames = namedParameterJdbcTemplate.query(
@@ -275,6 +278,7 @@ public class PokerService {
                 (rs, rowNum) -> {
                     TableGame tableGame = new TableGame();
                     tableGame.setGameId(rs.getInt("game_id"));
+                    tableGame.setWinnerName(playerIdNameMap.get(rs.getInt("winner_player_id")));
                     tableGame.setGameSequence(rs.getInt("game_sequence"));
                     tableGame.setRunning(rs.getInt("is_running") == 1);
                     tableGame.setTableId(rs.getInt("table_id"));
@@ -392,8 +396,9 @@ public class PokerService {
         return tables;
     }
 
-    public void updateGameStatus(int tableId, int gameId, boolean isRunning) {
-        jdbcTemplate.update("update table_game set is_running = ? where table_id = ? and game_id = ?", isRunning ? 1 : 0, tableId, gameId);
+    public void updateGameStatus(int tableId, int gameId, boolean isRunning, String winnerName) {
+        int winnerPlayerId = getPlayerId(winnerName);
+        jdbcTemplate.update("update table_game set is_running = ?, winner_player_id =? where table_id = ? and game_id = ?", isRunning ? 1 : 0, winnerPlayerId, tableId, gameId);
     }
 
     public void updateTableStatus(int tableId, boolean isRunning) {

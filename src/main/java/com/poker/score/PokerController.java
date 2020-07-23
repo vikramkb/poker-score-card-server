@@ -80,7 +80,7 @@ public class PokerController {
 
     @RequestMapping(value = "/table/game/status", method = RequestMethod.POST)
     public ResponseEntity<String> updateGameStatus(@RequestBody TableUpdateInfo tableUpdateInfo){
-        pokerService.updateGameStatus(tableUpdateInfo.getTableId(), tableUpdateInfo.getGameId(), tableUpdateInfo.isRunning());
+        pokerService.updateGameStatus(tableUpdateInfo.getTableId(), tableUpdateInfo.getGameId(), tableUpdateInfo.isRunning(), tableUpdateInfo.getWinnerName());
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
