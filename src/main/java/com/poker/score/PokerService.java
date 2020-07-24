@@ -82,10 +82,12 @@ public class PokerService {
         if(isTablePlayersAlreadyExists(tablePlayer.getTableId())){
             throw new IllegalArgumentException("table with players is already created");
         }
-        tablePlayer.getPlayers().forEach(p -> {
+        int order = 1;
+        for(String p : tablePlayer.getPlayers()) {
             int playerId = getPlayerId(p);
-            jdbcTemplate.update("insert into table_player(currnt_timestamp, table_id, player_id, is_playing) values(CURRENT_TIMESTAMP, ?, ?, ?)", tablePlayer.getTableId(), playerId, 1);
-        });
+            jdbcTemplate.update("insert into table_player(currnt_timestamp, table_id, player_id, is_playing, seating_order) values(CURRENT_TIMESTAMP, ?, ?, ?, ?)", tablePlayer.getTableId(), playerId, 1, order);
+            order++;
+        }
     }
 
     public int createTableGame(TableGame tableGame) {
@@ -222,7 +224,7 @@ public class PokerService {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("table_id", tableId);
         List<TableGameRoundPlayer> tableGameRoundPlayers = namedParameterJdbcTemplate.query(
-                "SELECT tgrp.table_id, tgrp.game_id, tgrp.round_id, tgr.bid_amount, GROUP_CONCAT(p.player_name) round_players FROM table_game_round tgr, table_game_round_player tgrp, player p where tgr.round_ID=tgrp.round_id and tgrp.player_id=p.player_id and tgr.table_id = :table_id group by table_id, game_id, round_id, bid_amount order by table_id, game_id, round_id;", parameters,
+                "SELECT tgrp.table_id, tgrp.game_id, tgrp.round_id, tgr.bid_amount, GROUP_CONCAT(p.player_name ORDER BY table_id, game_id, round_id, tgrp.seating_order asc) round_players FROM table_game_round tgr, table_game_round_player tgrp, player p where tgr.round_ID=tgrp.round_id and tgrp.player_id=p.player_id and tgr.table_id = :table_id group by table_id, game_id, round_id, bid_amount order by table_id, game_id, round_id;", parameters,
                 (rs, rowNum) -> {
                     TableGameRoundPlayer round = new TableGameRoundPlayer();
                     round.setTableId(rs.getInt("table_id"));
@@ -262,7 +264,7 @@ public class PokerService {
         tablePlayer.setTableId(tableId);
         List<String> playerNames = new ArrayList<>();
         namedParameterJdbcTemplate.query(
-                "select * from table_player where table_id = :table_id", parameters,
+                "select * from table_player where table_id = :table_id order by seating_order asc", parameters,
                 (rs, rowNum) -> {
                     playerNames.add(playerIdNameMap.get(rs.getInt("player_id")));
                     return 1;
@@ -437,10 +439,11 @@ public class PokerService {
                 .addValue("bid_amount", tableGameRoundPlayer.getBidAmount());
         namedParameterJdbcTemplate.update("insert into table_game_round(currnt_timestamp, table_id, game_id, round_sequence, bid_amount) values(CURRENT_TIMESTAMP, :table_id, :game_id, :round_sequence, :bid_amount)", namedParameters, keyHolder);
         Map<String, Integer> playerNameIdMap = getPlayerNameIdMap();
-        tableGameRoundPlayer.getPlayerNames().forEach(p -> {
-            jdbcTemplate.update("insert into table_game_round_player(currnt_timestamp, table_id, game_id, round_id, player_id) values(CURRENT_TIMESTAMP, ?, ?, ?, ?)", tableGameRoundPlayer.getTableId(), tableGameRoundPlayer.getGameId(), keyHolder.getKey(),  playerNameIdMap.get(p));
-
-                });
+        int order = 1;
+        for(String p : tableGameRoundPlayer.getPlayerNames()) {
+            jdbcTemplate.update("insert into table_game_round_player(currnt_timestamp, table_id, game_id, round_id, player_id, seating_order) values(CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)", tableGameRoundPlayer.getTableId(), tableGameRoundPlayer.getGameId(), keyHolder.getKey(),  playerNameIdMap.get(p), order);
+            order++;
+        }
         return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 }
