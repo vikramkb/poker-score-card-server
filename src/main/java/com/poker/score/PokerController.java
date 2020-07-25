@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
@@ -109,6 +110,12 @@ public class PokerController {
         }).collect(Collectors.toList());
 
         return new ResponseEntity<>(fullTables, HttpStatus.OK);
+    }
+
+    @RequestMapping(value = "/player/score", method = RequestMethod.GET)
+    public ResponseEntity<Map<String, Integer>> getPlayerTotalScore(){
+        Map<String, Integer> playerScoreMap = pokerService.getPlayerScore();
+        return new ResponseEntity<>(playerScoreMap, HttpStatus.OK);
     }
 
 

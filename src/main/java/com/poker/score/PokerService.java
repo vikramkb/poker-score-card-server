@@ -446,4 +446,18 @@ public class PokerService {
         }
         return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
+
+    public Map<String, Integer> getPlayerScore() {
+        Map<String, Integer> playerScore = new HashMap<>();
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        namedParameterJdbcTemplate.query(
+                "select player_name, sum(score) total_score from poker_table t, table_total_player_score ps, player p where t.table_id = ps.table_id and p.player_id=ps.player_id and t.is_real_game=1  group by player_name;", parameters,
+                (rs, rowNum) -> {
+                    playerScore.put(rs.getString("player_name"), rs.getInt("total_score"));
+                    return "";
+                });
+
+
+        return playerScore;
+    }
 }
