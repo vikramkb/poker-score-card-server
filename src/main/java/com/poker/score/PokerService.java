@@ -224,7 +224,7 @@ public class PokerService {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("table_id", tableId);
         List<TableGameRoundPlayer> tableGameRoundPlayers = namedParameterJdbcTemplate.query(
-                "SELECT tgrp.table_id, tgrp.game_id, tgrp.round_id, tgr.bid_amount, GROUP_CONCAT(p.player_name ORDER BY table_id, game_id, round_id, tgrp.seating_order asc) round_players FROM table_game_round tgr, table_game_round_player tgrp, player p where tgr.round_ID=tgrp.round_id and tgrp.player_id=p.player_id and tgr.table_id = :table_id group by table_id, game_id, round_id, bid_amount order by table_id, game_id, round_id;", parameters,
+                "SELECT tgrp.table_id, tgrp.game_id, tgrp.round_id, tgr.bid_amount, GROUP_CONCAT(p.player_name ORDER BY tgrp.table_id, tgrp.game_id, tgrp.round_id, tgrp.seating_order asc) round_players FROM table_game_round tgr, table_game_round_player tgrp, player p where tgr.round_ID=tgrp.round_id and tgrp.player_id=p.player_id and tgr.table_id = :table_id group by table_id, game_id, round_id, bid_amount order by table_id, game_id, round_id;", parameters,
                 (rs, rowNum) -> {
                     TableGameRoundPlayer round = new TableGameRoundPlayer();
                     round.setTableId(rs.getInt("table_id"));
