@@ -33,7 +33,7 @@ public class PokerService {
                 .addValue("is_running", table.isRunning() ? 1 : 0);
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        namedParameterJdbcTemplate.update("insert into poker_table(currnt_timestamp, table_name, created_player_id, is_running) values(CURRENT_TIMESTAMP, :table_name, :created_player_id, :is_running)", namedParameters, keyHolder);
+        namedParameterJdbcTemplate.update("insert into poker_table(currnt_timestamp, table_name, created_player_id, is_running, is_real_game) values(CURRENT_TIMESTAMP, :table_name, :created_player_id, :is_running, 1)", namedParameters, keyHolder);
         return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 
@@ -392,7 +392,7 @@ public class PokerService {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         Map<Integer, String> playerIdNameMap = getPlayerIdNameMap();
         List<TableScore> tables = namedParameterJdbcTemplate.query(
-                "select * from poker_table order by currnt_timestamp desc", parameters,
+                "select * from poker_table where is_real_game=1 order by currnt_timestamp desc", parameters,
                 (rs, rowNum) -> {
                     Table table = new Table();
                     table.setTableId(rs.getInt("table_id"));
@@ -447,17 +447,26 @@ public class PokerService {
         return Objects.requireNonNull(keyHolder.getKey()).intValue();
     }
 
-    public Map<String, Integer> getPlayerScore() {
-        Map<String, Integer> playerScore = new HashMap<>();
+    public Map<String, Map<String, Integer>> getPlayerScore() {
+        Map<String, Map<String, Integer>> playerScoreByDateMap = new HashMap<>();
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         namedParameterJdbcTemplate.query(
-                "select player_name, sum(score) total_score from poker_table t, table_total_player_score ps, player p where t.table_id = ps.table_id and p.player_id=ps.player_id and t.is_real_game=1  group by player_name;", parameters,
+                "select player_name, date(t.currnt_timestamp) played_date, sum(score) total_score from poker.poker_table t, poker.table_total_player_score ps, poker.player p where t.table_id = ps.table_id and p.player_id=ps.player_id and t.is_real_game=1  group by player_name, date(t.currnt_timestamp) order by played_date desc;", parameters,
                 (rs, rowNum) -> {
-                    playerScore.put(rs.getString("player_name"), rs.getInt("total_score"));
+                    String playedDate = rs.getString("played_date");
+                    String playerName = rs.getString("player_name");
+                    int totalScore = rs.getInt("total_score");
+                    if(playerScoreByDateMap.containsKey(playedDate)) {
+                        playerScoreByDateMap.get(playedDate).put(playerName, totalScore);
+                    }else{
+                        Map<String, Integer> scoreMap = new HashMap<>();
+                        scoreMap.put(playerName, totalScore);
+                        playerScoreByDateMap.put(playedDate, scoreMap);
+                    }
                     return "";
                 });
 
 
-        return playerScore;
+        return playerScoreByDateMap;
     }
 }

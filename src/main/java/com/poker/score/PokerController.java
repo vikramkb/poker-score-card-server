@@ -113,8 +113,8 @@ public class PokerController {
     }
 
     @RequestMapping(value = "/player/score", method = RequestMethod.GET)
-    public ResponseEntity<Map<String, Integer>> getPlayerTotalScore(){
-        Map<String, Integer> playerScoreMap = pokerService.getPlayerScore();
+    public ResponseEntity<Map<String, Map<String, Integer>>> getPlayerTotalScore(){
+        Map<String, Map<String, Integer>> playerScoreMap = pokerService.getPlayerScore();
         return new ResponseEntity<>(playerScoreMap, HttpStatus.OK);
     }
 
